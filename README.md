@@ -1,2 +1,2 @@
-# MMCK
-MM/C/K model in queue theory 
+# MMC
+M/M/C model in queue theory 
