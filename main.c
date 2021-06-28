@@ -9,10 +9,10 @@
 
 double minimum(double *next_dept_time, int total_num_server, int* Server_num);
 
-void arrival (double *sim_time, int *total_num_server, int *Num_In_Queue, int *Num_Custs_Delayed, double *next_arr_time, double *Area_Under_Q,
+void arrival (double *sim_time, int *total_num_server, int *Num_In_Queue, int *Num_Custs_Delayed, double *next_arr_time, double *Area_Under_Q, double *Area_Under_System, 
               float*Last_Event_Time, float *Time_Since_Last_Event, double *Time_Arrival, int *server_status, double *next_dept_time, float *mean_interarrival_time, float *mean_service_time, int *index, double* Time_arrival_sys);
 
-void depature (double *sim_time,float *Time_Since_Last_Event,float *Last_Event_Time, double *Area_Under_Q, int *Num_In_Queue, int *server_status, double *next_dept_time,
+void depature (double *sim_time,float *Time_Since_Last_Event,float *Last_Event_Time, double *Area_Under_Q, double *Area_Under_System, int *Num_In_Queue, int *server_status, double *next_dept_time,
                 double *q_Delay,double *Time_Arrival,  double *Total_q_Delay,int *Num_Custs_Delayed,float *mean_service_time, int *Server_num, int *index, double* Time_arrival_sys, double *sys_delay, double *total_sys_delay, int total_num_server);
 
 
@@ -31,8 +31,10 @@ int main()
     int Num_Custs_Delayed = 0;
     double avg_q_delay =0;
     float avg_num_in_queue = 0;
+    float avg_num_in_system = 0;
     double next_arr_time = 0;
     double Area_Under_Q = 0;
+    double Area_Under_System = 0;
     float Last_Event_Time = 0;
     double Total_q_Delay = 0;
     double q_Delay = 0;
@@ -75,14 +77,14 @@ int main()
    while (Num_Custs_Delayed < Num_Delays_Required){
         if (next_arr_time > minimum(next_dept_time, total_num_server, &Server_num)){  // depature event trigger
 
-            depature (&sim_time, &Time_Since_Last_Event,&Last_Event_Time, &Area_Under_Q, &Num_In_Queue, server_status, next_dept_time,
+            depature (&sim_time, &Time_Since_Last_Event,&Last_Event_Time, &Area_Under_Q, &Area_Under_System, &Num_In_Queue, server_status, next_dept_time,
                 &q_Delay,Time_Arrival,  &Total_q_Delay,&Num_Custs_Delayed,&mean_service_time, &Server_num,  &index,  Time_arrival_sys,  &sys_delay,  &total_sys_delay,  total_num_server);
 
 
         }
 
         else {  // arrival event trigger
-            arrival (&sim_time, &total_num_server, &Num_In_Queue, &Num_Custs_Delayed, &next_arr_time, &Area_Under_Q,
+            arrival (&sim_time, &total_num_server, &Num_In_Queue, &Num_Custs_Delayed, &next_arr_time, &Area_Under_Q, &Area_Under_System,
              &Last_Event_Time, &Time_Since_Last_Event, Time_Arrival, server_status, next_dept_time, &mean_interarrival_time, &mean_service_time,  &index,  Time_arrival_sys);
 
         }
@@ -110,8 +112,12 @@ int main()
 
     avg_num_in_queue = Area_Under_Q/sim_time;
     printf("avg_num_in_queue= %.8f \n",avg_num_in_queue);
+   
     avg_sys_delay = total_sys_delay/Num_Custs_Delayed;
     printf ("avg_sys_delay= %.8f \n", avg_sys_delay);
+
+    avg_num_in_system = Area_Under_System/sim_time;
+    printf("avg_num_in_system = %.8f \n", avg_num_in_system);
 
 
 
@@ -133,7 +139,7 @@ double minimum(double *next_dept_time, int total_num_server , int *Server_num){
 }
 
 
-void arrival (double *sim_time, int *total_num_server, int *Num_In_Queue, int *Num_Custs_Delayed, double *next_arr_time, double *Area_Under_Q,
+void arrival (double *sim_time, int *total_num_server, int *Num_In_Queue, int *Num_Custs_Delayed, double *next_arr_time, double *Area_Under_Q, double *Area_Under_System,
               float*Last_Event_Time, float *Time_Since_Last_Event, double *Time_Arrival, int *server_status, double *next_dept_time, float *mean_interarrival_time, float *mean_service_time, int *index, double* Time_arrival_sys){
 
 *sim_time = *next_arr_time;
@@ -141,6 +147,17 @@ void arrival (double *sim_time, int *total_num_server, int *Num_In_Queue, int *N
 *Time_Since_Last_Event = *sim_time - *Last_Event_Time;
 *Last_Event_Time = *sim_time;
 *Area_Under_Q += (*Num_In_Queue) * (*Time_Since_Last_Event);
+
+if(server_status[1] == Idle){
+    *Area_Under_System += (*Num_In_Queue) * (*Time_Since_Last_Event);
+}else{
+    *Area_Under_System += (*Num_In_Queue + 1) * (*Time_Since_Last_Event);
+}
+for(int i=2;i<*total_num_server+1;i++ ){
+    if(server_status[i] == Busy){
+        *Area_Under_System += (1) * (*Time_Since_Last_Event);
+    }
+}
 
 
 for (int i=1; i<*total_num_server+1;i++){
@@ -168,7 +185,7 @@ for (int i=1; i<*total_num_server+1;i++){
 }
 
 
-void depature (double *sim_time,float *Time_Since_Last_Event,float *Last_Event_Time, double *Area_Under_Q, int *Num_In_Queue, int *server_status, double *next_dept_time,
+void depature (double *sim_time,float *Time_Since_Last_Event,float *Last_Event_Time, double *Area_Under_Q, double *Area_Under_System, int *Num_In_Queue, int *server_status, double *next_dept_time,
                 double *q_Delay,double *Time_Arrival,  double *Total_q_Delay,int *Num_Custs_Delayed,float *mean_service_time, int *Server_num, int *index, double* Time_arrival_sys, double *sys_delay, double *total_sys_delay, int total_num_server){
 
 int  total_servers=total_num_server;
@@ -176,7 +193,18 @@ int  total_servers=total_num_server;
 *sim_time = next_dept_time[*Server_num];
 *Time_Since_Last_Event = *sim_time - *Last_Event_Time;
 *Last_Event_Time = *sim_time;
-*Area_Under_Q += (*Num_In_Queue)*(*Time_Since_Last_Event);
+*Area_Under_Q += (*Num_In_Queue) * (*Time_Since_Last_Event);
+
+if(server_status[1] == Idle){
+    *Area_Under_System += (*Num_In_Queue) * (*Time_Since_Last_Event);
+}else{
+    *Area_Under_System += (*Num_In_Queue + 1) * (*Time_Since_Last_Event);
+}
+for(int i=2;i<total_servers+1;i++ ){
+    if(server_status[i] == Busy){
+        *Area_Under_System += (1) * (*Time_Since_Last_Event);
+    }
+}
 
 if (*Num_In_Queue ==0){
     server_status[*Server_num] = Idle;
